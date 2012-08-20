@@ -49,3 +49,17 @@ func TestCap(t *testing.T) {
     }
   }
 }
+
+func TestDelete(t *testing.T) {
+  c := New(1)
+
+  c.Put("1", "1")
+
+  if v, tm := c.Delete("1"); v != "1" || tm.IsZero() {
+    t.Errorf("expected \"1\" and non-zero time, got %v and %v", v, tm)
+  }
+
+  if v, tm := c.Delete("1"); v != nil || !tm.IsZero() {
+    t.Errorf("expected nil and zero time, got %v and %v", v, tm)
+  }
+}

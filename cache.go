@@ -20,12 +20,7 @@ type entry struct {
   t          time.Time
 }
 
-func head(c *Cache, e *entry) {
-  if c.head == e {
-    return
-  }
-
-  // take e out of its current predicament
+func extract(e *entry) {
   if n := e.next; n != nil {
     n.prev = e.prev
   }
@@ -33,23 +28,30 @@ func head(c *Cache, e *entry) {
   if p := e.prev; p != nil {
     p.next = e.next
   }
+}
+
+func head(c *Cache, e *entry) {
+  if c.head == e {
+    return
+  }
+
+  extract(e)
 
   if h := c.head; h != nil {
-    h := c.head
     h.prev = e
     e.next = h
     e.prev = nil
   } else {
-    c.head = e
     c.tail = e
   }
+  c.head = e
 }
 
 func tail(c *Cache) {
   for c.size > c.capacity {
-    t := c.tail
-    c.tail = t.prev
-    delete(c.m, t.key)
+    delete(c.m, c.tail.key)
+    c.tail = c.tail.prev
+    c.tail.next = nil
     c.size -= 1
   }
 }
@@ -75,6 +77,31 @@ func (c *Cache) Get(key string) (interface{}, time.Time) {
   return e.val, e.t
 }
 
+func (c *Cache) Delete(key string) (interface{}, time.Time) {
+  c.l.Lock()
+  defer c.l.Unlock()
+
+  e, ok := c.m[key]
+  if !ok {
+    return nil, time.Time{}
+  }
+
+  delete(c.m, key)
+
+  extract(e)
+
+  if c.head == e {
+    c.head = e.next
+  }
+
+  if c.tail == e {
+    c.tail = e.prev
+  }
+
+  c.size--
+  return e.val, e.t
+}
+
 func (c *Cache) Put(key string, val interface{}) {
   c.l.Lock()
   defer c.l.Unlock()
@@ -92,3 +119,17 @@ func (c *Cache) Put(key string, val interface{}) {
   head(c, e)
   tail(c)
 }
+
+// func (c *Cache) Dump() {
+//   fmt.Printf("Size: %d\n", c.size)
+//   fmt.Println("Map")
+//   for k, v := range c.m {
+//     fmt.Printf("%v -> %v\n", k, v)
+//   }
+
+//   fmt.Println("Lst")
+//   for h := c.head; h != nil; h = h.next {
+//     fmt.Printf("%v -> %v\n", h.key, h.val)
+//   }
+//   fmt.Println()
+// }
