@@ -21,8 +21,6 @@ type entry struct {
 }
 
 func head(c *Cache, e *entry) {
-  e.t = time.Now()
-
   if c.head == e {
     return
   }
@@ -88,7 +86,7 @@ func (c *Cache) Put(key string, val interface{}) {
     return
   }
 
-  e = &entry{key: key, val: val}
+  e = &entry{key: key, val: val, t: time.Now()}
   c.m[key] = e
   c.size++
   head(c, e)
