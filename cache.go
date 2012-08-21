@@ -109,6 +109,7 @@ func (c *Cache) Put(key string, val interface{}) {
   e, ok := c.m[key]
   if ok {
     e.val = val
+    e.t = time.Now()
     head(c, e)
     return
   }
